@@ -100,7 +100,7 @@
         "desc": true
       },
       "display": {
-        "component": "cards",
+        "component": "grid",
         "properties": {
           "url": {
             "label": "Website URL",
