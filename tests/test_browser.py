@@ -150,7 +150,7 @@ class TestBrowserManager:
         # Setup mocks - Actor should be a regular MagicMock, not AsyncMock
         mock_kv_store = MagicMock()
         mock_kv_store.set_value = MagicMock()
-        mock_actor_module.get_key_value_store = MagicMock(return_value=mock_kv_store)
+        mock_actor_module.open_key_value_store = MagicMock(return_value=mock_kv_store)
         mock_actor_module.push_data = MagicMock()
         
         # Setup playwright mocks

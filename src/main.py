@@ -375,7 +375,7 @@ def main() -> None:
             
             # 10. Save files to Key-Value Store
             logger.info(event="kv_store_save", message="Saving files to Key-Value Store")
-            key_value_store = Actor.get_key_value_store()
+            key_value_store = Actor.open_key_value_store()
             
             # Save MCP JSON
             mcp_key = f"mcp-{run_id}.json"

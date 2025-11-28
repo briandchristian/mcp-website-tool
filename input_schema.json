@@ -11,14 +11,9 @@
     },
     "cookies": {
       "title": "Cookies",
-      "type": "array",
-      "description": "Optional list of cookies to set",
-      "items": {
-        "type": "object",
-        "additionalProperties": {
-          "type": "string"
-        }
-      }
+      "type": "string",
+      "description": "Optional JSON array of cookies to set. Format: [{\"name\": \"cookie1\", \"value\": \"value1\"}, ...]",
+      "editor": "textarea"
     },
     "removeBanners": {
       "title": "Remove Banners",

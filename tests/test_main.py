@@ -68,8 +68,8 @@ class TestMain:
         mock_kv_store = MagicMock()
         mock_kv_store.store_id = "test-store-id"
         mock_kv_store.set_value = MagicMock()
-        # Ensure get_key_value_store is a regular MagicMock, not async
-        mock_actor_class.get_key_value_store = MagicMock(return_value=mock_kv_store)
+        # Use open_key_value_store (new API)
+        mock_actor_class.open_key_value_store = MagicMock(return_value=mock_kv_store)
 
         # Call main
         main()
@@ -134,7 +134,7 @@ class TestMain:
         mock_kv_store = MagicMock()
         mock_kv_store.store_id = "test-store-id"
         mock_kv_store.set_value = MagicMock()
-        mock_actor_class.get_key_value_store = MagicMock(return_value=mock_kv_store)
+        mock_actor_class.open_key_value_store = MagicMock(return_value=mock_kv_store)
         # Ensure push_data is synchronous (not async)
         if hasattr(mock_actor_class.push_data, 'return_value'):
             pass  # Already set
@@ -185,7 +185,7 @@ class TestMain:
         mock_kv_store = MagicMock()
         mock_kv_store.store_id = "test-store-id"
         mock_kv_store.set_value = MagicMock()
-        mock_actor_class.get_key_value_store = MagicMock(return_value=mock_kv_store)
+        mock_actor_class.open_key_value_store = MagicMock(return_value=mock_kv_store)
         # Ensure push_data is synchronous (not async)
         if hasattr(mock_actor_class.push_data, 'return_value'):
             pass  # Already set
@@ -246,7 +246,7 @@ class TestMain:
         mock_kv_store = MagicMock()
         mock_kv_store.store_id = "test-store-id"
         mock_kv_store.set_value = MagicMock()
-        mock_actor_class.get_key_value_store = MagicMock(return_value=mock_kv_store)
+        mock_actor_class.open_key_value_store = MagicMock(return_value=mock_kv_store)
         # Ensure push_data is synchronous (not async)
         if hasattr(mock_actor_class.push_data, 'return_value'):
             pass  # Already set

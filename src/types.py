@@ -4,9 +4,9 @@ Type definitions for the MCP Website Tool actor.
 This module contains Pydantic models for input validation and data structures.
 """
 
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, Field, HttpUrl, computed_field
+from pydantic import BaseModel, Field, HttpUrl, computed_field, field_validator
 
 
 class ActorInput(BaseModel):
@@ -54,8 +54,27 @@ class InputModel(BaseModel):
 
     url: HttpUrl = Field(..., description="URL to interact with")
     cookies: Optional[List[Dict[str, str]]] = Field(
-        default=None, description="Optional list of cookies to set"
+        default=None, description="Optional list of cookies to set (can be JSON string or array)"
     )
+    
+    @field_validator('cookies', mode='before')
+    @classmethod
+    def parse_cookies(cls, value: Any) -> Optional[List[Dict[str, str]]]:
+        """Parse cookies from JSON string or return as-is if already a list."""
+        if value is None:
+            return None
+        if isinstance(value, str):
+            try:
+                import json
+                parsed = json.loads(value)
+                if isinstance(parsed, list):
+                    return parsed
+                return None
+            except (json.JSONDecodeError, TypeError):
+                return None
+        if isinstance(value, list):
+            return value
+        return None
     removeBanners: bool = Field(
         default=True, description="Whether to remove banners from the page"
     )

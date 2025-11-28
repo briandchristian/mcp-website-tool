@@ -120,7 +120,7 @@ class BrowserManager:
                     screenshot_data = page.screenshot(full_page=True)
                     
                     # Save screenshot to key-value store using synchronous API
-                    key_value_store = Actor.get_key_value_store()
+                    key_value_store = Actor.open_key_value_store()
                     key_value_store.set_value(screenshot_key, screenshot_data, content_type="image/png")
                     self.logger.error(
                         "Error screenshot saved",
