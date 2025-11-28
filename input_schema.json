@@ -6,8 +6,7 @@
     "url": {
       "title": "Url",
       "type": "string",
-      "description": "URL to interact with",
-      "format": "uri"
+      "description": "URL to interact with"
     },
     "cookies": {
       "title": "Cookies",
