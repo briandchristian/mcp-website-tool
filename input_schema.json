@@ -18,8 +18,7 @@
         "additionalProperties": {
           "type": "string"
         }
-      },
-      "default": null
+      }
     },
     "removeBanners": {
       "title": "Remove Banners",
