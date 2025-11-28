@@ -13,6 +13,7 @@
       "title": "Cookies",
       "type": "array",
       "description": "Optional list of cookies to set",
+      "editor": "json",
       "items": {
         "type": "object",
         "additionalProperties": {
