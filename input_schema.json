@@ -1,0 +1,40 @@
+{
+  "title": "MCP Website Tool Input",
+  "type": "object",
+  "schemaVersion": 1,
+  "properties": {
+    "url": {
+      "title": "Url",
+      "type": "string",
+      "description": "URL to interact with",
+      "format": "uri"
+    },
+    "cookies": {
+      "title": "Cookies",
+      "type": "array",
+      "description": "Optional list of cookies to set",
+      "items": {
+        "type": "object",
+        "additionalProperties": {
+          "type": "string"
+        }
+      },
+      "default": null
+    },
+    "removeBanners": {
+      "title": "Remove Banners",
+      "type": "boolean",
+      "description": "Whether to remove banners from the page",
+      "default": true
+    },
+    "maxActions": {
+      "title": "Max Actions",
+      "type": "integer",
+      "description": "Maximum number of actions to perform",
+      "default": 50,
+      "minimum": 5,
+      "maximum": 200
+    }
+  },
+  "required": ["url"]
+}

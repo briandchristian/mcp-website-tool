@@ -1,0 +1,16 @@
+{
+  "actorSpecification": 1,
+  "name": "mcp-website-tool",
+  "version": "1.0.0",
+  "title": "MCP.tools Actor – Turn any site into an AI tool",
+  "description": "Transform any website into an AI tool with MCP (Model Context Protocol) tools. Automatically extracts interactive elements and generates MCP-compatible tool definitions.",
+  "defaultRunTimeoutSecs": 3600,
+  "dockerfileFile": "../Dockerfile",
+  "readme": "./README.md",
+  "input": "./input_schema.json",
+  "storages": {
+    "dataset": "./.actor/dataset"
+  },
+  "pricingPerRun": 0.03
+}
+
