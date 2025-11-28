@@ -47,9 +47,6 @@
       "description": "Summary of generated MCP tools and extracted actions",
       "transformation": {
         "fields": ["url", "runId", "toolCount", "actionsCount", "mcpJsonUrl", "previewUrl", "screenshotUrl"],
-        "unwind": [],
-        "flatten": [],
-        "omit": [],
         "limit": 100,
         "desc": true
       },
@@ -99,9 +96,6 @@
       "description": "Complete information about the MCP tools generation",
       "transformation": {
         "fields": ["url", "runId", "toolCount", "actionsCount", "mcpJsonUrl", "previewUrl", "screenshotUrl"],
-        "unwind": [],
-        "flatten": [],
-        "omit": [],
         "limit": 1000,
         "desc": true
       },
