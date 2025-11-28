@@ -8,7 +8,7 @@
   "readme": "./README.md",
   "input": "./input_schema.json",
   "storages": {
-    "dataset": "./dataset_schema.json"
+    "dataset": "./.actor/dataset_schema.json"
   },
   "pricingPerRun": 0.02
 }
