@@ -48,6 +48,9 @@ htmlcov/
 # Apify
 .apify/
 .apify_storage/
+.actor/dataset/
+!.actor/actor.json
+!.actor/input_schema.json
 
 # Logs
 *.log
@@ -69,3 +72,4 @@ Thumbs.db
 !pyproject.toml
 !package.json
 !package-lock.json
+!dataset_schema.json

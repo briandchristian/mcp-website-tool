@@ -1,0 +1,144 @@
+{
+  "actorSpecification": 1,
+  "fields": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "properties": {
+      "url": {
+        "type": "string",
+        "format": "uri",
+        "description": "The website URL that was processed"
+      },
+      "runId": {
+        "type": "string",
+        "description": "Unique identifier for this run"
+      },
+      "toolCount": {
+        "type": "integer",
+        "description": "Number of MCP tools generated",
+        "minimum": 0
+      },
+      "actionsCount": {
+        "type": "integer",
+        "description": "Number of interactive elements extracted",
+        "minimum": 0
+      },
+      "mcpJsonUrl": {
+        "type": "string",
+        "format": "uri",
+        "description": "Direct URL to download the MCP tools JSON file"
+      },
+      "previewUrl": {
+        "type": "string",
+        "format": "uri",
+        "description": "URL to view the interactive preview page with integration buttons"
+      },
+      "screenshotUrl": {
+        "type": "string",
+        "format": "uri",
+        "description": "URL to view the screenshot of the processed page"
+      }
+    },
+    "required": ["url", "runId", "toolCount", "actionsCount", "mcpJsonUrl", "previewUrl", "screenshotUrl"]
+  },
+  "views": {
+    "overview": {
+      "title": "MCP Tools Overview",
+      "description": "Summary of generated MCP tools and extracted actions",
+      "transformation": {
+        "fields": ["url", "runId", "toolCount", "actionsCount", "mcpJsonUrl", "previewUrl", "screenshotUrl"],
+        "unwind": [],
+        "flatten": [],
+        "omit": [],
+        "limit": 100,
+        "desc": true
+      },
+      "display": {
+        "component": "table",
+        "properties": {
+          "url": {
+            "label": "Processed URL",
+            "format": "link",
+            "description": "The website that was analyzed"
+          },
+          "runId": {
+            "label": "Run ID",
+            "format": "text",
+            "description": "Unique identifier for this run"
+          },
+          "toolCount": {
+            "label": "Tools Generated",
+            "format": "number",
+            "description": "Number of MCP tools created"
+          },
+          "actionsCount": {
+            "label": "Actions Extracted",
+            "format": "number",
+            "description": "Number of interactive elements found"
+          },
+          "mcpJsonUrl": {
+            "label": "MCP JSON",
+            "format": "link",
+            "description": "Download MCP tools JSON file"
+          },
+          "previewUrl": {
+            "label": "Preview Page",
+            "format": "link",
+            "description": "View interactive preview with integration options"
+          },
+          "screenshotUrl": {
+            "label": "Screenshot",
+            "format": "link",
+            "description": "View page screenshot"
+          }
+        }
+      }
+    },
+    "details": {
+      "title": "Detailed Results",
+      "description": "Complete information about the MCP tools generation",
+      "transformation": {
+        "fields": ["url", "runId", "toolCount", "actionsCount", "mcpJsonUrl", "previewUrl", "screenshotUrl"],
+        "unwind": [],
+        "flatten": [],
+        "omit": [],
+        "limit": 1000,
+        "desc": true
+      },
+      "display": {
+        "component": "cards",
+        "properties": {
+          "url": {
+            "label": "Website URL",
+            "format": "link"
+          },
+          "runId": {
+            "label": "Run ID",
+            "format": "text"
+          },
+          "toolCount": {
+            "label": "MCP Tools",
+            "format": "number"
+          },
+          "actionsCount": {
+            "label": "Actions",
+            "format": "number"
+          },
+          "mcpJsonUrl": {
+            "label": "MCP JSON File",
+            "format": "link"
+          },
+          "previewUrl": {
+            "label": "Preview Page",
+            "format": "link"
+          },
+          "screenshotUrl": {
+            "label": "Screenshot",
+            "format": "link"
+          }
+        }
+      }
+    }
+  }
+}
+
