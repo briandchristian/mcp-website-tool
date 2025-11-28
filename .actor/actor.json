@@ -6,7 +6,7 @@
   "description": "Transform any website into an AI tool with MCP (Model Context Protocol) tools. Automatically extracts interactive elements and generates MCP-compatible tool definitions.",
   "defaultRunTimeoutSecs": 3600,
   "readme": "./README.md",
-  "input": "./input_schema.json",
+  "input": "./.actor/input_schema.json",
   "storages": {
     "dataset": "./dataset_schema.json"
   },
