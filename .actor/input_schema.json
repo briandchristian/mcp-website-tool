@@ -7,7 +7,7 @@
       "title": "Url",
       "type": "string",
       "description": "URL to interact with",
-      "editor": "textfield"
+      "editor": "url"
     },
     "cookies": {
       "title": "Cookies",
