@@ -392,8 +392,8 @@ async def main() -> None:
             await key_value_store.set_value(screenshot_key, screenshot_data, content_type="image/png")
             logger.info(event="screenshot_saved", message="Screenshot saved", key=screenshot_key)
             
-            # Get public URLs
-            store_id = key_value_store.store_id
+            # Get public URLs (SDK v3: store_id -> id)
+            store_id = key_value_store.id
             base_url = f"https://api.apify.com/v2/key-value-stores/{store_id}/records"
             
             mcp_json_url = f"{base_url}/{mcp_key}"
