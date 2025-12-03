@@ -456,4 +456,5 @@ async def main() -> None:
 
 # Apify Actor entry point - SDK v3 async pattern
 if __name__ == "__main__":
-    Actor.start(main)
+    import asyncio
+    asyncio.run(Actor.start(main))
