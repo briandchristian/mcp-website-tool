@@ -110,48 +110,13 @@ class BrowserManager:
             page = self.create_page()
             yield page
         except Exception as e:
-            if page:
-                try:
-                    # Generate error screenshot filename with timestamp
-                    timestamp = int(time.time() * 1000)
-                    screenshot_key = f"error-{timestamp}.png"
-                    
-                    # Take screenshot
-                    screenshot_data = page.screenshot(full_page=True)
-                    
-                    # Save screenshot to key-value store using synchronous API
-                    key_value_store = Actor.open_key_value_store()
-                    key_value_store.set_value(screenshot_key, screenshot_data, content_type="image/png")
-                    self.logger.error(
-                        "Error screenshot saved",
-                        screenshot_key=screenshot_key,
-                        error=str(e)
-                    )
-                    
-                    # Get page content
-                    page_content = page.content()
-                    
-                    # Push error data to dataset using synchronous API
-                    error_data = {
-                        "error": str(e),
-                        "error_type": type(e).__name__,
-                        "url": page.url,
-                        "screenshot_key": screenshot_key,
-                        "page_content": page_content,
-                    }
-                    Actor.push_data(error_data)
-                    self.logger.error(
-                        "Error data pushed to dataset",
-                        error=str(e),
-                        url=page.url
-                    )
-                except Exception as capture_error:
-                    # If error capture itself fails, log it but don't hide original error
-                    self.logger.error(
-                        "Failed to capture error details",
-                        capture_error=str(capture_error),
-                        original_error=str(e)
-                    )
+            # Log error details (cannot capture screenshots/data in sync context with async SDK v3)
+            self.logger.error(
+                "Error during page operation",
+                error=str(e),
+                error_type=type(e).__name__,
+                url=page.url if page else "unknown"
+            )
             # Re-raise the original exception
             raise
         finally:
