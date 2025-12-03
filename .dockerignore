@@ -1,0 +1,42 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+
+# Testing
+tests/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Storage
+storage/
+apify_storage/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Git
+.git/
+.gitignore
+
+# Documentation
+*.md
+!README.md
+
+# Deprecated
+*.deprecated
+
+# Build artifacts
+BUILD_VERIFICATION_REPORT.md
+APIFY_COMPLIANCE_REPORT.md
+INPUT_SCHEMA_COMPLIANCE_ANALYSIS.md
+
