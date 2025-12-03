@@ -472,6 +472,4 @@ def main() -> None:
 
 # Apify Actor entry point
 if __name__ == "__main__":
-    # SDK v2 sync pattern
-    with Actor:
-        main()
+    Actor.start(main)

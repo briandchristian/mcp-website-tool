@@ -4,16 +4,12 @@ FROM apify/actor-python-playwright:3.11
 # Copy project files
 COPY . ./
 
-# Install compatible dependency versions
+# Install only additional dependencies
+# apify and playwright are already in base image
 RUN pip install --no-cache-dir \
-    apify==2.3.0 \
-    playwright>=1.40.0 \
-    pydantic==2.9.2 \
     structlog>=23.0.0
 
-# Install Playwright browsers
-RUN playwright install chromium
-RUN playwright install-deps chromium
+# Chromium already installed in base image
 
 # Set the entry point
 CMD ["python", "-m", "src.main"]
