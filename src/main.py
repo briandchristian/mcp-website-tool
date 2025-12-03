@@ -14,6 +14,7 @@ This module orchestrates the complete production workflow:
 10. Full error handling with screenshots
 """
 
+import asyncio
 import html as html_module
 import json
 import uuid
@@ -320,7 +321,8 @@ def main() -> None:
         
         # 2. Get and validate input
         logger.info(event="input_validation", message="Getting and validating input")
-        actor_input = Actor.get_input()
+        # Actor.get_input() is async in SDK v3, run it synchronously
+        actor_input = asyncio.run(Actor.get_input())
         config = InputModel(**actor_input)
         logger.info(
             event="input_validated",
@@ -375,21 +377,22 @@ def main() -> None:
             
             # 10. Save files to Key-Value Store
             logger.info(event="kv_store_save", message="Saving files to Key-Value Store")
-            key_value_store = Actor.open_key_value_store()
+            # Actor.open_key_value_store() is async in SDK v3, run it synchronously
+            key_value_store = asyncio.run(Actor.open_key_value_store())
             
             # Save MCP JSON
             mcp_key = f"mcp-{run_id}.json"
-            key_value_store.set_value(mcp_key, mcp_json)
+            asyncio.run(key_value_store.set_value(mcp_key, mcp_json))
             logger.info(event="mcp_json_saved", message="MCP JSON saved", key=mcp_key)
             
             # Save preview HTML
             preview_key = f"preview-{run_id}.html"
-            key_value_store.set_value(preview_key, preview_html, content_type="text/html")
+            asyncio.run(key_value_store.set_value(preview_key, preview_html, content_type="text/html"))
             logger.info(event="preview_saved", message="Preview HTML saved", key=preview_key)
             
             # Save screenshot
             screenshot_key = f"screenshot-{run_id}.png"
-            key_value_store.set_value(screenshot_key, screenshot_data, content_type="image/png")
+            asyncio.run(key_value_store.set_value(screenshot_key, screenshot_data, content_type="image/png"))
             logger.info(event="screenshot_saved", message="Screenshot saved", key=screenshot_key)
             
             # Get public URLs
@@ -420,7 +423,8 @@ def main() -> None:
                 "actionsCount": len(actions),
             }
             
-            Actor.push_data(result_data)
+            # Actor.push_data() is async in SDK v3, run it synchronously
+            asyncio.run(Actor.push_data(result_data))
             logger.info(
                 event="data_pushed",
                 message="Results pushed to dataset",
