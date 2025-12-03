@@ -291,7 +291,7 @@ def generate_preview_html(
     return html
 
 
-def main() -> None:
+async def main() -> None:
     """
     Main Actor function - Production-ready workflow.
     
@@ -319,10 +319,9 @@ def main() -> None:
         logger.info(event="playwright_check", message="Ensuring Playwright is installed")
         ensure_playwright_installed()
         
-        # 2. Get and validate input
+        # 2. Get and validate input (await in async context)
         logger.info(event="input_validation", message="Getting and validating input")
-        # Actor.get_input() is async in SDK v3, run it synchronously
-        actor_input = asyncio.run(Actor.get_input())
+        actor_input = await Actor.get_input()
         config = InputModel(**actor_input)
         logger.info(
             event="input_validated",
@@ -377,22 +376,21 @@ def main() -> None:
             
             # 10. Save files to Key-Value Store
             logger.info(event="kv_store_save", message="Saving files to Key-Value Store")
-            # Actor.open_key_value_store() is async in SDK v3, run it synchronously
-            key_value_store = asyncio.run(Actor.open_key_value_store())
+            key_value_store = await Actor.open_key_value_store()
             
             # Save MCP JSON
             mcp_key = f"mcp-{run_id}.json"
-            asyncio.run(key_value_store.set_value(mcp_key, mcp_json))
+            await key_value_store.set_value(mcp_key, mcp_json)
             logger.info(event="mcp_json_saved", message="MCP JSON saved", key=mcp_key)
             
             # Save preview HTML
             preview_key = f"preview-{run_id}.html"
-            asyncio.run(key_value_store.set_value(preview_key, preview_html, content_type="text/html"))
+            await key_value_store.set_value(preview_key, preview_html, content_type="text/html")
             logger.info(event="preview_saved", message="Preview HTML saved", key=preview_key)
             
             # Save screenshot
             screenshot_key = f"screenshot-{run_id}.png"
-            asyncio.run(key_value_store.set_value(screenshot_key, screenshot_data, content_type="image/png"))
+            await key_value_store.set_value(screenshot_key, screenshot_data, content_type="image/png")
             logger.info(event="screenshot_saved", message="Screenshot saved", key=screenshot_key)
             
             # Get public URLs
@@ -423,8 +421,7 @@ def main() -> None:
                 "actionsCount": len(actions),
             }
             
-            # Actor.push_data() is async in SDK v3, run it synchronously
-            asyncio.run(Actor.push_data(result_data))
+            await Actor.push_data(result_data)
             logger.info(
                 event="data_pushed",
                 message="Results pushed to dataset",
@@ -476,5 +473,11 @@ def main() -> None:
 
 # Apify Actor entry point
 if __name__ == "__main__":
-    # Run main function directly (Actor SDK handles initialization)
-    main()
+    import nest_asyncio
+    nest_asyncio.apply()  # Allow nested event loops for Playwright sync API
+    
+    async def run():
+        async with Actor:
+            await main()
+    
+    asyncio.run(run())
