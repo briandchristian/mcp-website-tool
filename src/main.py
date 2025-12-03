@@ -472,9 +472,5 @@ def main() -> None:
 
 # Apify Actor entry point
 if __name__ == "__main__":
-    # Initialize Actor context
-    Actor.init()
-    try:
-        main()
-    finally:
-        Actor.exit()
+    # Run main function directly (Actor SDK handles initialization)
+    main()
