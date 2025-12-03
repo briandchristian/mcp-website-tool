@@ -472,4 +472,9 @@ def main() -> None:
 
 # Apify Actor entry point
 if __name__ == "__main__":
-    Actor.main(main)
+    # Initialize Actor context
+    Actor.init()
+    try:
+        main()
+    finally:
+        Actor.exit()
