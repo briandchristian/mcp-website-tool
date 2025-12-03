@@ -17,7 +17,7 @@ class MockActor:
     kv_store = {}
     
     @staticmethod
-    def get_input():
+    async def get_input():
         return {
             "url": "https://example.com",
             "maxActions": 10,
@@ -25,26 +25,46 @@ class MockActor:
         }
     
     @staticmethod
-    def push_data(data):
+    async def push_data(data):
         MockActor.data_store.append(data)
         print(f"✅ DATA PUSHED: {json.dumps(data, indent=2)}")
     
     @staticmethod
-    def open_key_value_store():
+    async def open_key_value_store():
         class MockKVStore:
             store_id = "test-store-id"
             
             @staticmethod
-            def set_value(key, value, content_type=None):
+            async def set_value(key, value, content_type=None):
                 MockActor.kv_store[key] = value
                 print(f"✅ KV STORE: Saved {key}")
         
         return MockKVStore()
     
-    @staticmethod
-    def start(func):
+    # Mock context manager
+    def __enter__(self):
+        return self
+    
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        return False
+    
+    async def __aenter__(self):
+        return self
+    
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        return False
+
+# Monkey patch
+import src.main
+src.main.Actor = MockActor()
+
+if __name__ == "__main__":
+    import asyncio
+    
+    async def run_test():
         print("🚀 Starting mock actor...")
-        func()
+        async with MockActor():
+            await main()
         print(f"\n📊 RESULTS:")
         print(f"  - Data entries pushed: {len(MockActor.data_store)}")
         print(f"  - KV store entries: {len(MockActor.kv_store)}")
@@ -54,12 +74,6 @@ class MockActor:
         else:
             print("❌ FAIL: No data pushed to dataset")
         print('='*50)
-
-# Monkey patch
-import src.main
-src.main.Actor = MockActor
-
-if __name__ == "__main__":
-    import src.main
-    src.main.Actor.start(main)
+    
+    asyncio.run(run_test())
 
