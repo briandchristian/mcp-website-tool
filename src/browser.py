@@ -11,8 +11,8 @@ from typing import Optional
 from apify import Actor
 from playwright.sync_api import Browser, BrowserContext, Page, sync_playwright
 
-from src.types import InputModel
-from src.utils import setup_logging
+from .types import InputModel
+from .utils import setup_logging
 
 
 class BrowserManager:

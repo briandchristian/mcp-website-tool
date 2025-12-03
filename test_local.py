@@ -12,7 +12,17 @@ sys.path.insert(0, str(Path(__file__).parent))
 from src.main import main
 
 # Mock Actor class for local testing
-class MockActor:
+class MockActorMeta(type):
+    """Metaclass to make MockActor usable as both class and context manager."""
+    
+    async def __aenter__(cls):
+        return cls
+    
+    async def __aexit__(cls, exc_type, exc_val, exc_tb):
+        return False
+
+
+class MockActor(metaclass=MockActorMeta):
     data_store = []
     kv_store = {}
     
@@ -40,31 +50,17 @@ class MockActor:
                 print(f"✅ KV STORE: Saved {key}")
         
         return MockKVStore()
-    
-    # Mock context manager
-    def __enter__(self):
-        return self
-    
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        return False
-    
-    async def __aenter__(self):
-        return self
-    
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
-        return False
 
 # Monkey patch
 import src.main
-src.main.Actor = MockActor()
+src.main.Actor = MockActor
 
 if __name__ == "__main__":
     import asyncio
     
     async def run_test():
         print("🚀 Starting mock actor...")
-        async with MockActor():
-            await main()
+        await main()
         print(f"\n📊 RESULTS:")
         print(f"  - Data entries pushed: {len(MockActor.data_store)}")
         print(f"  - KV store entries: {len(MockActor.kv_store)}")

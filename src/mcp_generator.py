@@ -10,8 +10,8 @@ import re
 from typing import Any, Dict, List
 from urllib.parse import urlparse
 
-from src.types import InputModel, ExtractedData, PageData
-from src.utils import setup_logging
+from .types import InputModel, ExtractedData, PageData
+from .utils import setup_logging
 
 
 class MCPResourceGenerator:

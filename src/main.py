@@ -23,11 +23,11 @@ from typing import Any, Dict
 from apify import Actor
 from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 
-from src.browser import BrowserManager
-from src.extractor import DataExtractor
-from src.mcp_generator import MCPResourceGenerator
-from src.types import InputModel
-from src.utils import ensure_playwright_installed, setup_logging
+from .browser import BrowserManager
+from .extractor import DataExtractor
+from .mcp_generator import MCPResourceGenerator
+from .types import InputModel
+from .utils import ensure_playwright_installed, setup_logging
 
 
 def generate_preview_html(
@@ -345,116 +345,117 @@ async def main() -> None:
     """
     Main Actor function - Production-ready workflow with async/sync bridge.
     """
-    logger = setup_logging()
-    run_id = str(uuid.uuid4())[:8]
-    logger.info(event="actor_started", message="Starting MCP Website Tool Actor", run_id=run_id)
-    
-    try:
-        # 1. Ensure Playwright is installed
-        logger.info(event="playwright_check", message="Ensuring Playwright is installed")
-        ensure_playwright_installed()
+    async with Actor:
+        logger = setup_logging()
+        run_id = str(uuid.uuid4())[:8]
+        logger.info(event="actor_started", message="Starting MCP Website Tool Actor", run_id=run_id)
         
-        # 2. Get and validate input (async)
-        logger.info(event="input_validation", message="Getting and validating input")
-        actor_input = await Actor.get_input()
-        config = InputModel(**actor_input)
-        logger.info(
-            event="input_validated",
-            message="Input validated",
-            url=str(config.url),
-            max_actions=config.maxActions,
-            remove_banners=config.removeBanners,
-        )
+        try:
+            # 1. Ensure Playwright is installed
+            logger.info(event="playwright_check", message="Ensuring Playwright is installed")
+            ensure_playwright_installed()
+            
+            # 2. Get and validate input (async)
+            logger.info(event="input_validation", message="Getting and validating input")
+            actor_input = await Actor.get_input()
+            config = InputModel(**actor_input)
+            logger.info(
+                event="input_validated",
+                message="Input validated",
+                url=str(config.url),
+                max_actions=config.maxActions,
+                remove_banners=config.removeBanners,
+            )
+            
+            # 3. Run Playwright sync code in thread executor (avoids asyncio loop conflict)
+            logger.info(event="browser_execution", message="Running browser extraction in thread")
+            with ThreadPoolExecutor(max_workers=1) as executor:
+                future = executor.submit(run_sync_browser_extraction, config, run_id, logger)
+                actions, mcp_json, screenshot_data, preview_html, url = future.result()
+            
+            # 4. Save files to Key-Value Store (async)
+            logger.info(event="kv_store_save", message="Saving files to Key-Value Store")
+            key_value_store = await Actor.open_key_value_store()
+            
+            # Save MCP JSON
+            mcp_key = f"mcp-{run_id}.json"
+            await key_value_store.set_value(mcp_key, mcp_json)
+            logger.info(event="mcp_json_saved", message="MCP JSON saved", key=mcp_key)
+            
+            # Save preview HTML
+            preview_key = f"preview-{run_id}.html"
+            await key_value_store.set_value(preview_key, preview_html, content_type="text/html")
+            logger.info(event="preview_saved", message="Preview HTML saved", key=preview_key)
+            
+            # Save screenshot
+            screenshot_key = f"screenshot-{run_id}.png"
+            await key_value_store.set_value(screenshot_key, screenshot_data, content_type="image/png")
+            logger.info(event="screenshot_saved", message="Screenshot saved", key=screenshot_key)
+            
+            # Get public URLs
+            store_id = key_value_store.store_id
+            base_url = f"https://api.apify.com/v2/key-value-stores/{store_id}/records"
+            
+            mcp_json_url = f"{base_url}/{mcp_key}"
+            preview_url = f"{base_url}/{preview_key}"
+            screenshot_url = f"{base_url}/{screenshot_key}"
+            
+            logger.info(
+                event="urls_generated",
+                message="Public URLs generated",
+                mcp_url=mcp_json_url,
+                preview_url=preview_url,
+                screenshot_url=screenshot_url,
+            )
+            
+            # 5. Push data to dataset (async)
+            tool_count = len(mcp_json.get("tools", []))
+            result_data = {
+                "mcpJsonUrl": mcp_json_url,
+                "previewUrl": preview_url,
+                "screenshotUrl": screenshot_url,
+                "toolCount": tool_count,
+                "url": url,
+                "runId": run_id,
+                "actionsCount": len(actions),
+            }
+            
+            await Actor.push_data(result_data)
+            logger.info(
+                event="data_pushed",
+                message="Results pushed to dataset",
+                tool_count=tool_count,
+            )
+            
+            logger.info(
+                event="actor_completed",
+                message="Actor completed successfully",
+                run_id=run_id,
+                tool_count=tool_count,
+                url=url,
+            )
         
-        # 3. Run Playwright sync code in thread executor (avoids asyncio loop conflict)
-        logger.info(event="browser_execution", message="Running browser extraction in thread")
-        with ThreadPoolExecutor(max_workers=1) as executor:
-            future = executor.submit(run_sync_browser_extraction, config, run_id, logger)
-            actions, mcp_json, screenshot_data, preview_html, url = future.result()
+        except PlaywrightTimeoutError as e:
+            logger.error(
+                event="navigation_timeout",
+                message="Navigation timeout",
+                error=str(e),
+                url=config.url if 'config' in locals() else "unknown",
+            )
+            raise
         
-        # 4. Save files to Key-Value Store (async)
-        logger.info(event="kv_store_save", message="Saving files to Key-Value Store")
-        key_value_store = await Actor.open_key_value_store()
-        
-        # Save MCP JSON
-        mcp_key = f"mcp-{run_id}.json"
-        await key_value_store.set_value(mcp_key, mcp_json)
-        logger.info(event="mcp_json_saved", message="MCP JSON saved", key=mcp_key)
-        
-        # Save preview HTML
-        preview_key = f"preview-{run_id}.html"
-        await key_value_store.set_value(preview_key, preview_html, content_type="text/html")
-        logger.info(event="preview_saved", message="Preview HTML saved", key=preview_key)
-        
-        # Save screenshot
-        screenshot_key = f"screenshot-{run_id}.png"
-        await key_value_store.set_value(screenshot_key, screenshot_data, content_type="image/png")
-        logger.info(event="screenshot_saved", message="Screenshot saved", key=screenshot_key)
-        
-        # Get public URLs
-        store_id = key_value_store.store_id
-        base_url = f"https://api.apify.com/v2/key-value-stores/{store_id}/records"
-        
-        mcp_json_url = f"{base_url}/{mcp_key}"
-        preview_url = f"{base_url}/{preview_key}"
-        screenshot_url = f"{base_url}/{screenshot_key}"
-        
-        logger.info(
-            event="urls_generated",
-            message="Public URLs generated",
-            mcp_url=mcp_json_url,
-            preview_url=preview_url,
-            screenshot_url=screenshot_url,
-        )
-        
-        # 5. Push data to dataset (async)
-        tool_count = len(mcp_json.get("tools", []))
-        result_data = {
-            "mcpJsonUrl": mcp_json_url,
-            "previewUrl": preview_url,
-            "screenshotUrl": screenshot_url,
-            "toolCount": tool_count,
-            "url": url,
-            "runId": run_id,
-            "actionsCount": len(actions),
-        }
-        
-        await Actor.push_data(result_data)
-        logger.info(
-            event="data_pushed",
-            message="Results pushed to dataset",
-            tool_count=tool_count,
-        )
-        
-        logger.info(
-            event="actor_completed",
-            message="Actor completed successfully",
-            run_id=run_id,
-            tool_count=tool_count,
-            url=url,
-        )
-    
-    except PlaywrightTimeoutError as e:
-        logger.error(
-            event="navigation_timeout",
-            message="Navigation timeout",
-            error=str(e),
-            url=config.url if 'config' in locals() else "unknown",
-        )
-        raise
-    
-    except Exception as e:
-        logger.error(
-            event="actor_error",
-            message="Actor failed with error",
-            error=str(e),
-            error_type=type(e).__name__,
-            url=str(config.url) if 'config' in locals() else "unknown",
-        )
-        raise
+        except Exception as e:
+            logger.error(
+                event="actor_error",
+                message="Actor failed with error",
+                error=str(e),
+                error_type=type(e).__name__,
+                url=str(config.url) if 'config' in locals() else "unknown",
+            )
+            raise
 
 
 # Apify Actor entry point - SDK v3 async pattern
 if __name__ == "__main__":
     import asyncio
-    asyncio.run(Actor.start(main))
+    asyncio.run(main())

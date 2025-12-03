@@ -8,8 +8,8 @@ from typing import List
 
 from playwright.sync_api import Page
 
-from src.types import InputModel, PageData
-from src.utils import normalize_url, sanitize_text, setup_logging
+from .types import InputModel, PageData
+from .utils import normalize_url, sanitize_text, setup_logging
 
 
 class DataExtractor:

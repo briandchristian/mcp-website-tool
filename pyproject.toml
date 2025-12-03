@@ -39,6 +39,10 @@ target-version = ["py311"]
 line-length = 100
 target-version = "py311"
 
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["src*"]
+
 [tool.mypy]
 python_version = "3.11"
 warn_return_any = true

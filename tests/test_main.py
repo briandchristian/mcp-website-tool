@@ -5,7 +5,7 @@ This module contains the main Actor entry point and orchestration logic.
 """
 
 import pytest
-from unittest.mock import Mock, patch, MagicMock, call
+from unittest.mock import Mock, patch, MagicMock, call, AsyncMock
 
 from src.main import main
 from src.types import ActorInput, ExtractedData, PageData
@@ -14,12 +14,13 @@ from src.types import ActorInput, ExtractedData, PageData
 class TestMain:
     """Test cases for main Actor function."""
 
+    @pytest.mark.asyncio
     @patch("src.main.Actor")
     @patch("src.main.BrowserManager")
     @patch("src.main.DataExtractor")
     @patch("src.main.MCPResourceGenerator")
     @patch("src.main.ensure_playwright_installed")
-    def test_main_with_valid_input(
+    async def test_main_with_valid_input(
         self,
         mock_ensure_playwright,
         mock_mcp_generator_class,
@@ -28,9 +29,13 @@ class TestMain:
         mock_actor_class,
     ):
         """Test main function with valid input."""
-        # Setup mocks - Actor is used as a module-level import
-        # Configure get_input to return a dict directly (not a coroutine)
-        mock_actor_class.get_input = MagicMock(return_value={
+        # Setup mocks - Actor is used as a module-level import and context manager
+        # Mock Actor as async context manager
+        mock_actor_class.__aenter__ = AsyncMock(return_value=mock_actor_class)
+        mock_actor_class.__aexit__ = AsyncMock(return_value=None)
+        
+        # Configure get_input to return a dict as async coroutine
+        mock_actor_class.get_input = AsyncMock(return_value={
             "url": "https://example.com",
             "maxActions": 10,
         })
@@ -67,12 +72,15 @@ class TestMain:
         # Mock key-value store
         mock_kv_store = MagicMock()
         mock_kv_store.store_id = "test-store-id"
-        mock_kv_store.set_value = MagicMock()
-        # Use open_key_value_store (new API)
-        mock_actor_class.open_key_value_store = MagicMock(return_value=mock_kv_store)
+        mock_kv_store.set_value = AsyncMock()
+        # Use open_key_value_store (new API) - returns async
+        mock_actor_class.open_key_value_store = AsyncMock(return_value=mock_kv_store)
+        
+        # Mock push_data as async
+        mock_actor_class.push_data = AsyncMock()
 
-        # Call main
-        main()
+        # Call main - now async
+        await main()
 
         # Verify playwright installation check
         mock_ensure_playwright.assert_called_once()
@@ -89,12 +97,13 @@ class TestMain:
         # Verify data was pushed to dataset
         assert mock_actor_class.push_data.call_count > 0
 
+    @pytest.mark.asyncio
     @patch("src.main.Actor")
     @patch("src.main.BrowserManager")
     @patch("src.main.DataExtractor")
     @patch("src.main.MCPResourceGenerator")
     @patch("src.main.ensure_playwright_installed")
-    def test_main_respects_max_pages(
+    async def test_main_respects_max_pages(
         self,
         mock_ensure_playwright,
         mock_mcp_generator_class,
@@ -103,8 +112,12 @@ class TestMain:
         mock_actor_class,
     ):
         """Test that main respects maxPages limit."""
-        # Configure get_input to return a dict directly (not a coroutine)
-        mock_actor_class.get_input = MagicMock(return_value={
+        # Mock Actor as async context manager
+        mock_actor_class.__aenter__ = AsyncMock(return_value=mock_actor_class)
+        mock_actor_class.__aexit__ = AsyncMock(return_value=None)
+        
+        # Configure get_input to return a dict as async coroutine
+        mock_actor_class.get_input = AsyncMock(return_value={
             "url": "https://example.com",
             "maxActions": 5,
         })
@@ -133,25 +146,24 @@ class TestMain:
         
         mock_kv_store = MagicMock()
         mock_kv_store.store_id = "test-store-id"
-        mock_kv_store.set_value = MagicMock()
-        mock_actor_class.open_key_value_store = MagicMock(return_value=mock_kv_store)
-        # Ensure push_data is synchronous (not async)
-        if hasattr(mock_actor_class.push_data, 'return_value'):
-            pass  # Already set
-        else:
-            mock_actor_class.push_data = MagicMock()
+        mock_kv_store.set_value = AsyncMock()
+        mock_actor_class.open_key_value_store = AsyncMock(return_value=mock_kv_store)
+        
+        # Mock push_data as async
+        mock_actor_class.push_data = AsyncMock()
 
-        main()
+        await main()
 
         # Should only process one URL (new workflow processes single URL)
         assert mock_page.goto.call_count == 1
 
+    @pytest.mark.asyncio
     @patch("src.main.Actor")
     @patch("src.main.BrowserManager")
     @patch("src.main.DataExtractor")
     @patch("src.main.MCPResourceGenerator")
     @patch("src.main.ensure_playwright_installed")
-    def test_main_handles_navigation_errors(
+    async def test_main_handles_navigation_errors(
         self,
         mock_ensure_playwright,
         mock_mcp_generator_class,
@@ -160,8 +172,12 @@ class TestMain:
         mock_actor_class,
     ):
         """Test that main handles navigation errors gracefully."""
-        # Configure get_input to return a dict directly (not a coroutine)
-        mock_actor_class.get_input = MagicMock(return_value={
+        # Mock Actor as async context manager
+        mock_actor_class.__aenter__ = AsyncMock(return_value=mock_actor_class)
+        mock_actor_class.__aexit__ = AsyncMock(return_value=None)
+        
+        # Configure get_input to return a dict as async coroutine
+        mock_actor_class.get_input = AsyncMock(return_value={
             "url": "https://example.com",
             "maxActions": 5,
         })
@@ -184,24 +200,23 @@ class TestMain:
         
         mock_kv_store = MagicMock()
         mock_kv_store.store_id = "test-store-id"
-        mock_kv_store.set_value = MagicMock()
-        mock_actor_class.open_key_value_store = MagicMock(return_value=mock_kv_store)
-        # Ensure push_data is synchronous (not async)
-        if hasattr(mock_actor_class.push_data, 'return_value'):
-            pass  # Already set
-        else:
-            mock_actor_class.push_data = MagicMock()
+        mock_kv_store.set_value = AsyncMock()
+        mock_actor_class.open_key_value_store = AsyncMock(return_value=mock_kv_store)
+        
+        # Mock push_data as async
+        mock_actor_class.push_data = AsyncMock()
 
         # Should raise exception (error handling logs it and re-raises)
         with pytest.raises(Exception, match="Navigation failed"):
-            main()
+            await main()
 
+    @pytest.mark.asyncio
     @patch("src.main.Actor")
     @patch("src.main.BrowserManager")
     @patch("src.main.DataExtractor")
     @patch("src.main.MCPResourceGenerator")
     @patch("src.main.ensure_playwright_installed")
-    def test_main_processes_multiple_urls(
+    async def test_main_processes_multiple_urls(
         self,
         mock_ensure_playwright,
         mock_mcp_generator_class,
@@ -210,8 +225,12 @@ class TestMain:
         mock_actor_class,
     ):
         """Test that main processes linked URLs when extractLinks is enabled."""
-        # Configure get_input to return a dict directly (not a coroutine)
-        mock_actor_class.get_input = MagicMock(return_value={
+        # Mock Actor as async context manager
+        mock_actor_class.__aenter__ = AsyncMock(return_value=mock_actor_class)
+        mock_actor_class.__aexit__ = AsyncMock(return_value=None)
+        
+        # Configure get_input to return a dict as async coroutine
+        mock_actor_class.get_input = AsyncMock(return_value={
             "url": "https://example.com",
             "maxActions": 10,
             "extractLinks": True,
@@ -245,15 +264,13 @@ class TestMain:
         
         mock_kv_store = MagicMock()
         mock_kv_store.store_id = "test-store-id"
-        mock_kv_store.set_value = MagicMock()
-        mock_actor_class.open_key_value_store = MagicMock(return_value=mock_kv_store)
-        # Ensure push_data is synchronous (not async)
-        if hasattr(mock_actor_class.push_data, 'return_value'):
-            pass  # Already set
-        else:
-            mock_actor_class.push_data = MagicMock()
+        mock_kv_store.set_value = AsyncMock()
+        mock_actor_class.open_key_value_store = AsyncMock(return_value=mock_kv_store)
+        
+        # Mock push_data as async
+        mock_actor_class.push_data = AsyncMock()
 
-        main()
+        await main()
 
         # Should have processed the main URL (new workflow only processes one URL)
         assert mock_page.goto.call_count == 1
