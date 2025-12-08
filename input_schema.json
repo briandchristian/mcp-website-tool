@@ -7,6 +7,8 @@
       "title": "Url",
       "type": "string",
       "description": "URL to interact with",
+      "prefill": "https://example.com",
+      "default": "https://example.com",
       "editor": "textfield"
     },
     "cookies": {
