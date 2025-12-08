@@ -305,57 +305,60 @@ def run_sync_browser_extraction(config: InputModel, run_id: str, logger):
     extractor = DataExtractor(config)
     mcp_generator = MCPResourceGenerator(config)
     
-    with browser_manager.safe_page() as page:
-        # Navigate to page with retry logic for slow/protected sites
-        max_retries = 2
-        for attempt in range(max_retries):
-            try:
-                # Increased timeout to 60s for slow sites like Home Depot
-                page.goto(url, wait_until="domcontentloaded", timeout=60000)
-                logger.info(event="page_loaded", message="Page loaded", url=url, attempt=attempt + 1)
-                break
-            except Exception as nav_error:
-                if attempt < max_retries - 1:
-                    logger.warning(
-                        event="navigation_retry",
-                        message=f"Navigation failed, retrying ({attempt + 1}/{max_retries})",
-                        error=str(nav_error),
-                        url=url
-                    )
-                    continue
-                else:
-                    logger.error(event="navigation_timeout", message="Navigation timeout", error=str(nav_error), url=url)
-                    raise
-        
-        # Extract interactive actions
-        logger.info(event="action_extraction_start", message="Extracting interactive actions")
-        actions = extractor.extract_interactive_actions(page)
-        logger.info(
-            event="action_extraction_complete",
-            message="Actions extracted",
-            count=len(actions),
-        )
-        
-        # Generate MCP JSON tools
-        logger.info(event="mcp_generation_start", message="Generating MCP tools JSON")
-        mcp_json = mcp_generator.generate_tools_from_actions(actions)
-        logger.info(
-            event="mcp_generation_complete",
-            message="MCP tools generated",
-            tool_count=len(mcp_json.get("tools", [])),
-        )
-        
-        # Take screenshot
-        logger.info(event="screenshot_capture", message="Taking screenshot")
-        screenshot_data = page.screenshot(full_page=True)
-        
-        # Generate preview HTML
-        logger.info(event="preview_generation", message="Generating preview HTML")
-        preview_html = generate_preview_html(url, actions, mcp_json, run_id)
-        
+    try:
+        with browser_manager.safe_page() as page:
+            # Navigate to page with retry logic for slow/protected sites
+            max_retries = 2
+            for attempt in range(max_retries):
+                try:
+                    # Increased timeout to 60s for slow sites like Home Depot
+                    page.goto(url, wait_until="domcontentloaded", timeout=60000)
+                    logger.info(event="page_loaded", message="Page loaded", url=url, attempt=attempt + 1)
+                    break
+                except Exception as nav_error:
+                    if attempt < max_retries - 1:
+                        logger.warning(
+                            event="navigation_retry",
+                            message=f"Navigation failed, retrying ({attempt + 1}/{max_retries})",
+                            error=str(nav_error),
+                            url=url
+                        )
+                        continue
+                    else:
+                        logger.error(event="navigation_timeout", message="Navigation timeout", error=str(nav_error), url=url)
+                        raise
+            
+            # Extract interactive actions
+            logger.info(event="action_extraction_start", message="Extracting interactive actions")
+            actions = extractor.extract_interactive_actions(page)
+            logger.info(
+                event="action_extraction_complete",
+                message="Actions extracted",
+                count=len(actions),
+            )
+            
+            # Generate MCP JSON tools
+            logger.info(event="mcp_generation_start", message="Generating MCP tools JSON")
+            mcp_json = mcp_generator.generate_tools_from_actions(actions)
+            logger.info(
+                event="mcp_generation_complete",
+                message="MCP tools generated",
+                tool_count=len(mcp_json.get("tools", [])),
+            )
+            
+            # Take screenshot
+            logger.info(event="screenshot_capture", message="Taking screenshot")
+            screenshot_data = page.screenshot(full_page=True)
+            
+            # Generate preview HTML
+            logger.info(event="preview_generation", message="Generating preview HTML")
+            preview_html = generate_preview_html(url, actions, mcp_json, run_id)
+            
+            return (actions, mcp_json, screenshot_data, preview_html, url)
+    finally:
+        # Always close browser manager after page context exits
+        # This ensures proper cleanup order: page closes first, then browser
         browser_manager.close()
-        
-        return (actions, mcp_json, screenshot_data, preview_html, url)
 
 
 async def main() -> None:

@@ -216,3 +216,47 @@ class TestBrowserManager:
         assert error_data["error"] == "Navigation failed", "Error message should match"
         assert error_data["url"] == "https://example.com", "URL should match"
 
+    @patch("src.browser.sync_playwright")
+    def test_safe_page_handles_closed_context_gracefully(self, mock_sync_playwright):
+        """
+        Test that safe_page() handles the case where browser_manager.close() 
+        is called before the context manager exits.
+        
+        This simulates the real-world scenario where close() is called inside
+        safe_page() context, causing the event loop to close before page.close().
+        """
+        from src.types import InputModel
+        
+        mock_playwright_instance = MagicMock()
+        mock_browser = MagicMock(spec=Browser)
+        mock_context = MagicMock(spec=BrowserContext)
+        mock_page = MagicMock(spec=Page)
+        
+        mock_playwright_instance.chromium.launch.return_value = mock_browser
+        mock_browser.new_context.return_value = mock_context
+        mock_context.new_page.return_value = mock_page
+        mock_sync_playwright.return_value.start.return_value = mock_playwright_instance
+        
+        # Simulate the event loop being closed - page.close() will raise an error
+        mock_page.close.side_effect = RuntimeError("Event loop is closed! Is Playwright already stopped?")
+        
+        config = InputModel(url="https://example.com")
+        manager = BrowserManager(config)
+        
+        # Simulate the problematic scenario: close() called inside safe_page()
+        with manager.safe_page() as page:
+            # Do some work
+            page.url = "https://example.com"
+            # Close browser manager while still in safe_page context
+            # This simulates what happens in main.py line 356
+            manager.close()
+        
+        # The page.close() should have been attempted but the error should be caught
+        # and logged as a warning, not raised
+        mock_page.close.assert_called_once()
+        
+        # Verify browser was closed
+        mock_browser.close.assert_called_once()
+        mock_context.close.assert_called_once()
+        mock_playwright_instance.stop.assert_called_once()
+

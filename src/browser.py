@@ -125,10 +125,18 @@ class BrowserManager:
                 try:
                     page.close()
                 except Exception as close_error:
-                    self.logger.warning(
-                        "Failed to close page",
-                        error=str(close_error)
-                    )
+                    # Log warning but don't raise - this is expected when browser
+                    # is closed before the context manager exits (e.g., when
+                    # browser_manager.close() is called inside safe_page() context)
+                    error_msg = str(close_error)
+                    # Suppress the "Event loop is closed" warning as it's expected
+                    # when browser cleanup happens before page cleanup
+                    if "Event loop is closed" not in error_msg and "already stopped" not in error_msg:
+                        self.logger.warning(
+                            "Failed to close page",
+                            error=error_msg
+                        )
+                    # Silently handle the expected case where Playwright is already stopped
 
     def close(self) -> None:
         """Close the browser and clean up resources."""
