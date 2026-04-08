@@ -494,6 +494,10 @@ async def main() -> None:
                 result_data["apifyActor"] = apify_actor_details
             if apify_actor_url:
                 result_data["apifyActorUrl"] = apify_actor_url
+
+            # Adapter compatibility: write the canonical OUTPUT record
+            # so Next.js API integrations can read a single stable key.
+            await key_value_store.set_value("OUTPUT", result_data)
             
             await Actor.push_data(result_data)
             logger.info(
