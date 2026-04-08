@@ -12,6 +12,7 @@ This module orchestrates the complete production workflow:
 8. Save files to Key-Value Store
 9. Push results to dataset
 10. Full error handling with screenshots
+11. Write OUTPUT compatibility record for external adapters
 """
 
 import html as html_module
