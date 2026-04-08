@@ -411,3 +411,61 @@ class TestMain:
         assert output_payload["mcpJsonUrl"].startswith("https://api.apify.com/v2/key-value-stores/")
         assert "previewUrl" in output_payload
 
+    @pytest.mark.asyncio
+    @patch("src.main.Actor")
+    @patch("src.main.BrowserManager")
+    @patch("src.main.DataExtractor")
+    @patch("src.main.MCPResourceGenerator")
+    @patch("src.main.ensure_playwright_installed")
+    async def test_main_supports_legacy_store_id_attribute(
+        self,
+        mock_ensure_playwright,
+        mock_mcp_generator_class,
+        mock_extractor_class,
+        mock_browser_manager_class,
+        mock_actor_class,
+    ):
+        """Uses store_id fallback for older SDK objects without `.id`."""
+        mock_actor_class.__aenter__ = AsyncMock(return_value=mock_actor_class)
+        mock_actor_class.__aexit__ = AsyncMock(return_value=None)
+        mock_actor_class.get_input = AsyncMock(
+            return_value={
+                "url": "https://example.com",
+                "maxActions": 5,
+            }
+        )
+
+        mock_browser_manager = MagicMock()
+        mock_page = MagicMock()
+        mock_page.url = "https://example.com"
+        mock_page.goto.return_value = None
+        mock_page.screenshot.return_value = b"fake_screenshot_data"
+        mock_browser_manager.safe_page.return_value.__enter__.return_value = mock_page
+        mock_browser_manager.safe_page.return_value.__exit__.return_value = None
+        mock_browser_manager_class.return_value = mock_browser_manager
+
+        mock_extractor = MagicMock()
+        mock_extractor.extract_interactive_actions.return_value = [
+            {"type": "button", "label": "Submit", "selector": "#submit"}
+        ]
+        mock_extractor_class.return_value = mock_extractor
+
+        mock_mcp_generator = MagicMock()
+        mock_mcp_generator.generate_tools_from_actions.return_value = {
+            "tools": [{"name": "button_submit", "description": "Click", "input_schema": {}}]
+        }
+        mock_mcp_generator_class.return_value = mock_mcp_generator
+
+        mock_kv_store = MagicMock(spec=["set_value", "store_id"])
+        mock_kv_store.store_id = "legacy-store-id"
+        mock_kv_store.set_value = AsyncMock()
+        mock_actor_class.open_key_value_store = AsyncMock(return_value=mock_kv_store)
+        mock_actor_class.push_data = AsyncMock()
+
+        await main()
+
+        pushed_payload = mock_actor_class.push_data.await_args.args[0]
+        assert pushed_payload["mcpJsonUrl"].startswith(
+            "https://api.apify.com/v2/key-value-stores/legacy-store-id/records/mcp-"
+        )
+

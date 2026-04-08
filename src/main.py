@@ -451,8 +451,13 @@ async def main() -> None:
             await key_value_store.set_value(screenshot_key, screenshot_data, content_type="image/png")
             logger.info(event="screenshot_saved", message="Screenshot saved", key=screenshot_key)
             
-            # Get public URLs (SDK v3: store_id -> id)
-            store_id = key_value_store.id
+            # Get public URLs with SDK compatibility:
+            # some SDK versions expose `id`, others expose `store_id`.
+            store_id = getattr(key_value_store, "id", None) or getattr(
+                key_value_store, "store_id", None
+            )
+            if not store_id:
+                raise RuntimeError("Key-value store identifier is missing (expected `id` or `store_id`).")
             base_url = f"https://api.apify.com/v2/key-value-stores/{store_id}/records"
             
             mcp_json_url = f"{base_url}/{mcp_key}"
