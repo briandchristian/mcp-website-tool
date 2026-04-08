@@ -1,12 +1,16 @@
 # Use Apify's base Python image with Playwright
 FROM apify/actor-python-playwright:3.11
 
-# Copy project files
-COPY . ./
+# Use a stable workdir for predictable build/runtime paths
+WORKDIR /usr/src/app
 
 # Install project dependencies
-# apify and playwright are already in base image - don't override them
-RUN pip install --no-cache-dir structlog
+# Install runtime deps explicitly so Actor SDK modules are always available
+COPY requirements.txt ./
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy project files
+COPY . ./
 
 # Chromium already installed in base image
 

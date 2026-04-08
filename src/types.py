@@ -4,6 +4,7 @@ Type definitions for the MCP Website Tool actor.
 This module contains Pydantic models for input validation and data structures.
 """
 
+import re
 from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Field, HttpUrl, computed_field, field_validator
@@ -53,9 +54,29 @@ class InputModel(BaseModel):
     """
 
     url: HttpUrl = Field(..., description="URL to interact with")
+    apifyActorId: Optional[str] = Field(
+        default=None,
+        description="Optional Apify Actor ID to fetch metadata for integration",
+    )
     cookies: Optional[List[Dict[str, str]]] = Field(
         default=None, description="Optional list of cookies to set (can be JSON string or array)"
     )
+
+    @field_validator("apifyActorId", mode="before")
+    @classmethod
+    def validate_apify_actor_id(cls, value: Any) -> Optional[str]:
+        """Validate optional Apify actor id format."""
+        if value is None:
+            return None
+        if not isinstance(value, str):
+            raise ValueError("apifyActorId must be a string")
+
+        actor_id = value.strip()
+        if actor_id == "":
+            return None
+        if not re.match(r"^[A-Za-z0-9]{17}$", actor_id):
+            raise ValueError("apifyActorId must be a 17-character alphanumeric identifier")
+        return actor_id
     
     @field_validator('cookies', mode='before')
     @classmethod

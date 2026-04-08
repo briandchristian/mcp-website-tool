@@ -30,6 +30,12 @@
       "default": 50,
       "minimum": 5,
       "maximum": 200
+    },
+    "apifyActorId": {
+      "title": "Apify Actor ID",
+      "type": "string",
+      "description": "Optional Apify Actor ID to fetch metadata for integration (for example: 2eLvo5XF9TcYOW1Xo)",
+      "editor": "textfield"
     }
   },
   "required": ["url"]

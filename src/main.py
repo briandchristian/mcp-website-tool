@@ -12,10 +12,12 @@ This module orchestrates the complete production workflow:
 8. Save files to Key-Value Store
 9. Push results to dataset
 10. Full error handling with screenshots
+11. Write OUTPUT compatibility record for external adapters
 """
 
 import html as html_module
 import json
+import os
 import uuid
 from concurrent.futures import ThreadPoolExecutor
 from typing import Any, Dict
@@ -23,6 +25,11 @@ from typing import Any, Dict
 from apify import Actor
 from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 
+from .apify_integration import (
+    build_apify_actor_api_url,
+    build_apify_actor_console_url,
+    fetch_apify_actor_details,
+)
 from .browser import BrowserManager
 from .extractor import DataExtractor
 from .mcp_generator import MCPResourceGenerator
@@ -386,6 +393,38 @@ async def main() -> None:
                 max_actions=config.maxActions,
                 remove_banners=config.removeBanners,
             )
+
+            # Optional Apify actor metadata enrichment for downstream integrations.
+            apify_actor_details = None
+            if config.apifyActorId:
+                logger.info(
+                    event="apify_actor_lookup_start",
+                    message="Fetching Apify actor metadata",
+                    actor_id=config.apifyActorId,
+                )
+                try:
+                    apify_actor_details = fetch_apify_actor_details(
+                        config.apifyActorId,
+                        token=os.getenv("APIFY_TOKEN"),
+                    )
+                    logger.info(
+                        event="apify_actor_lookup_complete",
+                        message="Fetched Apify actor metadata",
+                        actor_id=config.apifyActorId,
+                    )
+                except Exception as actor_error:
+                    logger.warning(
+                        event="apify_actor_lookup_failed",
+                        message="Failed to fetch Apify actor metadata",
+                        actor_id=config.apifyActorId,
+                        error=str(actor_error),
+                    )
+                    apify_actor_details = {
+                        "id": config.apifyActorId,
+                        "apiUrl": build_apify_actor_api_url(config.apifyActorId),
+                        "consoleUrl": build_apify_actor_console_url(config.apifyActorId),
+                        "error": str(actor_error),
+                    }
             
             # 3. Run Playwright sync code in thread executor (avoids asyncio loop conflict)
             logger.info(event="browser_execution", message="Running browser extraction in thread")
@@ -412,13 +451,29 @@ async def main() -> None:
             await key_value_store.set_value(screenshot_key, screenshot_data, content_type="image/png")
             logger.info(event="screenshot_saved", message="Screenshot saved", key=screenshot_key)
             
-            # Get public URLs (SDK v3: store_id -> id)
-            store_id = key_value_store.id
+            # Get public URLs with SDK compatibility:
+            # some SDK versions expose `id`, others expose `store_id`.
+            store_id = getattr(key_value_store, "id", None) or getattr(
+                key_value_store, "store_id", None
+            )
+            if not store_id:
+                raise RuntimeError("Key-value store identifier is missing (expected `id` or `store_id`).")
             base_url = f"https://api.apify.com/v2/key-value-stores/{store_id}/records"
             
             mcp_json_url = f"{base_url}/{mcp_key}"
             preview_url = f"{base_url}/{preview_key}"
             screenshot_url = f"{base_url}/{screenshot_key}"
+            apify_actor_url = None
+
+            if apify_actor_details:
+                apify_actor_key = f"apify-actor-{run_id}.json"
+                await key_value_store.set_value(apify_actor_key, apify_actor_details)
+                apify_actor_url = f"{base_url}/{apify_actor_key}"
+                logger.info(
+                    event="apify_actor_saved",
+                    message="Apify actor metadata saved",
+                    key=apify_actor_key,
+                )
             
             logger.info(
                 event="urls_generated",
@@ -439,6 +494,15 @@ async def main() -> None:
                 "runId": run_id,
                 "actionsCount": len(actions),
             }
+
+            if apify_actor_details:
+                result_data["apifyActor"] = apify_actor_details
+            if apify_actor_url:
+                result_data["apifyActorUrl"] = apify_actor_url
+
+            # Adapter compatibility: write the canonical OUTPUT record
+            # so Next.js API integrations can read a single stable key.
+            await key_value_store.set_value("OUTPUT", result_data)
             
             await Actor.push_data(result_data)
             logger.info(

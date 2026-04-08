@@ -37,6 +37,27 @@
         "type": "string",
         "format": "uri",
         "description": "URL to view the screenshot of the processed page"
+      },
+      "apifyActorUrl": {
+        "type": "string",
+        "format": "uri",
+        "description": "URL to a stored JSON file with Apify actor metadata"
+      },
+      "apifyActor": {
+        "type": "object",
+        "description": "Resolved metadata for the integrated Apify actor",
+        "properties": {
+          "id": { "type": "string" },
+          "name": { "type": ["string", "null"] },
+          "username": { "type": ["string", "null"] },
+          "title": { "type": ["string", "null"] },
+          "description": { "type": ["string", "null"] },
+          "isPublic": { "type": ["boolean", "null"] },
+          "latestBuild": { "type": ["string", "null"] },
+          "apiUrl": { "type": "string", "format": "uri" },
+          "consoleUrl": { "type": "string", "format": "uri" },
+          "error": { "type": ["string", "null"] }
+        }
       }
     },
     "required": ["url", "runId", "toolCount", "actionsCount", "mcpJsonUrl", "previewUrl", "screenshotUrl"]
@@ -46,7 +67,7 @@
       "title": "MCP Tools Overview",
       "description": "Summary of generated MCP tools and extracted actions",
       "transformation": {
-        "fields": ["url", "runId", "toolCount", "actionsCount", "mcpJsonUrl", "previewUrl", "screenshotUrl"],
+        "fields": ["url", "runId", "toolCount", "actionsCount", "mcpJsonUrl", "previewUrl", "screenshotUrl", "apifyActorUrl"],
         "limit": 100,
         "desc": true
       },
@@ -87,6 +108,11 @@
             "label": "Screenshot",
             "format": "link",
             "description": "View page screenshot"
+          },
+          "apifyActorUrl": {
+            "label": "Apify Actor Metadata",
+            "format": "link",
+            "description": "View resolved Apify actor metadata JSON"
           }
         }
       }
@@ -95,7 +121,7 @@
       "title": "Detailed Results",
       "description": "Complete information about the MCP tools generation",
       "transformation": {
-        "fields": ["url", "runId", "toolCount", "actionsCount", "mcpJsonUrl", "previewUrl", "screenshotUrl"],
+        "fields": ["url", "runId", "toolCount", "actionsCount", "mcpJsonUrl", "previewUrl", "screenshotUrl", "apifyActorUrl", "apifyActor"],
         "limit": 1000,
         "desc": true
       },
@@ -129,6 +155,14 @@
           "screenshotUrl": {
             "label": "Screenshot",
             "format": "link"
+          },
+          "apifyActorUrl": {
+            "label": "Apify Actor Metadata File",
+            "format": "link"
+          },
+          "apifyActor": {
+            "label": "Apify Actor Metadata",
+            "format": "object"
           }
         }
       }
